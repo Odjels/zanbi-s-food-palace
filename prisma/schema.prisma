@@ -1,0 +1,237 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  password        String
+  firstname       String
+  lastname        String
+  role            Role     @default(CUSTOMER)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  isEmailVerified Boolean  @default(false)
+  isActive        Boolean? @default(true)
+  
+  
+
+  otpCodes OtpCode[]
+
+  //groupAdmins GroupAdmin[] // Relation to GroupAdmin
+
+  // Profile fields
+  bio         String?
+  phone       String?
+  address     String?
+  website     String?
+  location    String?
+  dateOfBirth DateTime?
+  avatar      String?
+
+  // KYC fields
+  gender           String?
+  nationality      String?
+  countryOfBirth   String?
+  placeOfBirth     String? // City/State
+  currentAddress   String? // Full residential address
+  idDocumentType   String? // Passport, National ID, Driver's License
+  idDocumentNumber String?
+  employmentStatus String? // Employed, Self-employed, Unemployed, Retired, Student  
+  occupation       String? // Job title
+
+  // Group relationships
+         
+  // @relation("GroupAdmins")
+ 
+  expenses             Expense[]
+  withdrawalRequests   WithdrawalRequest[]
+  approvals            WithdrawalApproval[]
+  notifications        Notification[]
+  payment              Payment[]
+
+
+        
+
+  @@map("users")
+}
+model OtpCode {
+  id        Int      @id @default(autoincrement())
+  code      String
+  type      OtpType
+  userId    String
+  expiresAt DateTime
+  isUsed    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("otp_codes")
+}
+model Expense {
+  id          String   @id @default(uuid())
+  adminId     String
+  recordedBy  String // User who recorded the expense
+  amount      Float
+  description String
+  category    String?
+  receiptUrl  String? // URL to uploaded receipt
+  expenseDate DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  
+  recorder User  @relation(fields: [recordedBy], references: [id])
+
+  @@map("expenses")
+}
+model Payment {
+  id               String        @id @default(cuid())
+  reference        String        @unique
+  amount           Int // Amount in kobo (multiply by 100)
+  currency         String        @default("NGN")
+  status           PaymentStatus @default(PENDING)
+  paystackRef      String? // Paystack transaction reference
+  authorizationUrl String?
+  accessCode       String?
+  userId           String
+  adminId          String
+  paidAt           DateTime?     // Date and time when the payment was completed
+  
+  
+  user             User          @relation(fields: [userId], references: [id])
+  //campaign         Campaign         @relation(fields: [campaignId], references: [id])
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
+model Menu{
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  price       Float
+  imageUrl    String?
+  category    String?
+  available    Boolean   @default(true) // Indicates if the item is available
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  //campaign Campaign? @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("menus")
+}
+
+model WithdrawalRequest {
+  id          String           @id @default(uuid())
+  campaignId     String
+  requesterId String
+  amount      Float
+  purpose     String?
+  status      WithdrawalStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  // Relationships
+  //campaign     Campaign                @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  requester User                 @relation(fields: [requesterId], references: [id])
+  approvals WithdrawalApproval[]
+  @@map("withdrawal_requests")
+}
+model WithdrawalApproval {
+  id           String         @id @default(uuid())
+  withdrawalId String @unique
+  approverId   String
+  status       ApprovalStatus @default(PENDING)
+  comments     String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  // Relationships
+  withdrawal WithdrawalRequest @relation(fields: [withdrawalId], references: [id], onDelete: Cascade)
+  approver   User              @relation(fields: [approverId], references: [id])
+
+  @@unique([withdrawalId, approverId])
+  @@map("withdrawal_approvals")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  adminId   String?
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  // Relationships
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  //campaign Campaign? @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+enum Role {
+  CUSTOMER
+  
+  AUDITORS
+  ADMIN
+  
+  MANAGER
+  CHEF 
+  WAITER 
+  DELIVERY_PERSON
+}
+
+enum OtpType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  ABANDONED
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+enum NotificationType {
+  CONTRIBUTION_RECEIVED
+  EXPENSE_RECORDED
+  WITHDRAWAL_REQUESTED
+  WITHDRAWAL_APPROVED
+  WITHDRAWAL_REJECTED
+  
+  ROLE_CHANGED
+  
+}
