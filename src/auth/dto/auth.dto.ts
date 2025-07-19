@@ -1,5 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unused-vars */
+//* eslint-disable @typescript-eslint/no-unused-vars */
+// /* eslint-disable @typescript-eslint/no-unsafe-call */
+// /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import {
   IsEmail,
@@ -9,12 +10,13 @@ import {
   IsEnum,
   IsIn,
   IsDateString,
-  isEmail,
+  IsNotEmpty,
 } from 'class-validator';
 import { Role } from '../../auth/role.enum';
 
 export class RegisterDto {
-  //@isEmail()
+  @IsEmail()
+  @IsNotEmpty()
   email: string;
 
   @IsString()

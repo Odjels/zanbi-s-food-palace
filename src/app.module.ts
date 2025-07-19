@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
+///* eslint-disable @typescript-eslint/no-unsafe-call */
 import { Module } from '@nestjs/common';
 
 import { AppService } from './app.service';
@@ -11,6 +11,7 @@ import { EmailModule } from './email/email.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { MenuModule } from './menu/menu.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { APP_GUARD } from '@nestjs/core';
     UsersModule,
     DatabaseModule,
     EmailModule,
+    MenuModule,
   ],
   // controllers: [AppController, DatabaseController],
   providers: [
